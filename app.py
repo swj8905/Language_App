@@ -67,7 +67,6 @@ def setting_lang(lang):
 def save_uploaded_file(uploadedfile):
     if uploadedfile.name in list(map(os.path.basename, glob.glob("./엑셀파일/*.xlsx"))):
         st.error("동일한 파일 이름이 존재합니다. 파일 이름을 변경하거나 다른 파일을 업로드해주세요.")
-        print("OK")
     else:
         with open(os.path.join("./엑셀파일",uploadedfile.name),"wb") as f:
             f.write(uploadedfile.getbuffer())
