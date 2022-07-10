@@ -56,7 +56,7 @@ def setting_lang(lang):
     sound_repeat_num = 0
     check = st.checkbox(f"{lang} 자막", key=lang, value=True)
     with st.expander(f"{lang} 설정"):
-        interval_time = st.slider("간격 (초)", 1.0, 5.0, step=0.1, key=lang)
+        interval_time = st.slider("간격 (초)", 0.0, 5.0, step=0.1, key=lang)
         sound = st.checkbox("소리", key=lang, value=True)
         if sound:
             sound_speed = st.slider("배속", 1.0, 6.0, step=0.1, key=lang)
