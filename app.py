@@ -1,5 +1,6 @@
 import glob
 import os
+import shutil
 import time
 import streamlit as st
 import pandas as pd
@@ -80,10 +81,20 @@ with st.sidebar:
         "사용할 엑셀 파일",
         list(map(os.path.basename, glob.glob("./엑셀파일/*.xlsx")))
     )
-    with st.expander("새로운 엑셀 파일 업로드할 경우 클릭"):
+    with st.expander("새로운 엑셀 파일 업로드"):
         datafile = st.file_uploader("엑셀 업로드", type=['xlsx'])
         if datafile is not None:
             save_uploaded_file(datafile)
+    with st.expander("기존 파일 삭제"):
+        remove_file_name = st.radio(
+            "삭제할 엑셀 파일 선택",
+            list(map(os.path.basename, glob.glob("./엑셀파일/*.xlsx")))
+        )
+        remove_ok = st.button("삭제")
+        if remove_ok:
+            os.remove(f"./엑셀파일/{remove_file_name}")
+            shutil.rmtree(f"./음성파일/{remove_file_name.replace('.xlsx', '')}")
+            st.success("파일 삭제 완료! 새로 고침 해주세요.")
     st.write("---")
 
 
