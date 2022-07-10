@@ -103,7 +103,10 @@ with st.sidebar:
     df.columns = ["한국어", "영어", "중국어"]
     df.index = df.index + 1
 
-    take_range = st.slider("구간", min_value=1, max_value=df.index[-1], value=(1, df.index[-1]))
+    # take_range = st.slider("구간", min_value=1, max_value=df.index[-1], value=(1, df.index[-1]))
+    take_range = [0, 0]
+    take_range[0] = st.number_input('(구간) 시작번호 선택', min_value=1, max_value=df.index[-1]-1, value=1, step=1)
+    take_range[1] = st.number_input('(구간) 끝번호 선택', min_value=2, max_value=df.index[-1], value=df.index[-1], step=1)
     text_scale = st.slider("자막 크기 설정", 1, 6, step=1)
 
     lang_list = ["한국어", "영어", "중국어"]
@@ -126,7 +129,7 @@ if start_button:
 
     for i in df.itertuples():
         placeholder_list = [st.empty() for _ in range(len(setting_list) + 1)]
-        placeholder_list[0].write(str(i[0]))
+        placeholder_list[0].write("#" * (7-text_scale) + " " + str(i[0]))
         num = 1
         for j in i[1:]:
             placeholder_list[num].write("#" * (7-text_scale) + " " + j)
