@@ -75,7 +75,7 @@ def save_uploaded_file(uploadedfile):
             TTS_Module.make_mp3_files_all_languages(uploadedfile.name.replace(".xlsx", ""))
 
 with st.sidebar:
-    st.title("설정")
+    start_button_1 = st.sidebar.button("시작", key="button1")
     st.write("---")
     selected_file_name = st.radio(
         "사용할 엑셀 파일",
@@ -109,6 +109,7 @@ with st.sidebar:
     take_range[1] = st.number_input('(구간) 끝번호 선택', min_value=2, max_value=df.index[-1], value=df.index[-1], step=1)
     text_scale = st.slider("자막 크기 설정", 1, 6, step=1)
 
+
     lang_list = ["한국어", "영어", "중국어"]
     setting_list = []
     for lang in lang_list:
@@ -116,9 +117,23 @@ with st.sidebar:
         if setting_result["자막"]:
             setting_list.append(setting_result)
 
-    start_button = st.sidebar.button("시작")
 
-if start_button:
+    st.write("## 자막 순서 설정")
+    language_order = []
+    for setting_list_item in setting_list:
+        language_order.append(st.selectbox(f"{setting_list.index(setting_list_item) + 1}번째", [l["언어"] for l in setting_list if l["언어"] not in language_order]))
+
+    temp = []
+    for lan in language_order:
+        for setting_list_item in setting_list:
+            if setting_list_item["언어"] == lan:
+                temp.append(setting_list_item)
+                break
+    setting_list = temp
+
+    start_button_2 = st.sidebar.button("시작", key="button2")
+
+if start_button_1 or start_button_2:
     time.sleep(4)
     df = df.iloc[take_range[0]-1:take_range[1], :]
 
@@ -126,6 +141,7 @@ if start_button:
         st.write("자막 언어를 설정해주세요!")
     else:
         df = df[[i["언어"] for i in setting_list]]
+
 
     for i in df.itertuples():
         placeholder_list = [st.empty() for _ in range(len(setting_list) + 1)]
