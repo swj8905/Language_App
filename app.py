@@ -1,4 +1,6 @@
+from unicodedata import normalize
 import glob
+import json
 import os
 import shutil
 import time
@@ -53,16 +55,24 @@ def audio_autoplay(file_name, play_speed, repeat_num):
 def setting_lang(lang):
     check = False
     interval_time = 0
-    sound_speed = 0
     sound_repeat_num = 0
-    check = st.checkbox(f"{lang} 자막", key=lang, value=True)
+    sound_check = True
+    sound_speed = 1.0
+
+    get_saved_data = {}
+    for i in setting_dict["언어설정"]:
+        if i["언어"] == lang:
+            get_saved_data = i
+            break
+
+    check = st.checkbox(f"{lang} 자막", key=lang, value=get_saved_data["자막"] if get_saved_data else False)
     with st.expander(f"{lang} 설정"):
-        interval_time = st.slider("간격 (초)", 0.0, 5.0, step=0.1, key=lang)
-        sound = st.checkbox("소리", key=lang, value=True)
+        interval_time = st.slider("간격 (초)", 0.0, 5.0, step=0.1, key=lang, value=float(get_saved_data["간격"]) if get_saved_data else 0.1)
+        sound = st.checkbox("소리", key=lang, value=get_saved_data["소리"] if get_saved_data else False)
         if sound:
-            sound_speed = st.slider("배속", 1.0, 6.0, step=0.1, key=lang)
-            sound_repeat_num = st.slider("반복 횟수", 1, 5, 1, key=lang)
-    result = {"언어":lang, "자막":check, "간격":interval_time, "배속":sound_speed, "반복횟수":sound_repeat_num}
+            sound_speed = st.slider("배속", 1.0, 6.0, step=0.1, key=lang, value=float(get_saved_data["배속"]) if get_saved_data else 1.0)
+            sound_repeat_num = st.slider("반복 횟수", 1, 5, step=1, key=lang, value=int(get_saved_data["반복횟수"]) if get_saved_data else 1)
+    result = {"언어":lang, "자막":check, "간격":interval_time, "소리":sound, "배속":sound_speed, "반복횟수":sound_repeat_num}
     return result
 
 def save_uploaded_file(uploadedfile):
@@ -74,13 +84,26 @@ def save_uploaded_file(uploadedfile):
             st.success("업로드 완료하였습니다. MP3 변환을 시작합니다.".format(uploadedfile.name))
             TTS_Module.make_mp3_files_all_languages(uploadedfile.name.replace(".xlsx", ""))
 
+f_setting = open("./lang_setting.txt", "r", encoding="utf-8")
+setting_dict = json.loads(f_setting.read())
+
+def nfd2nfc(data):
+    return normalize("NFC", data)
+
 with st.sidebar:
     start_button_1 = st.sidebar.button("시작", key="button1")
     st.write("---")
+    excel_file_list = list(map(os.path.basename, glob.glob("./엑셀파일/*.xlsx")))
+    excel_file_list = list(map(nfd2nfc, excel_file_list))
+
+    if setting_dict["엑셀파일"] not in excel_file_list:
+        setting_dict["엑셀파일"] = excel_file_list[0]
+
     selected_file_name = st.radio(
         "사용할 엑셀 파일",
-        list(map(os.path.basename, glob.glob("./엑셀파일/*.xlsx")))
+        excel_file_list, index=excel_file_list.index(setting_dict["엑셀파일"])
     )
+
     with st.expander("새로운 엑셀 파일 업로드"):
         datafile = st.file_uploader("엑셀 업로드", type=['xlsx'])
         if datafile is not None:
@@ -105,9 +128,11 @@ with st.sidebar:
 
     # take_range = st.slider("구간", min_value=1, max_value=df.index[-1], value=(1, df.index[-1]))
     take_range = [0, 0]
-    take_range[0] = st.number_input('(구간) 시작번호 선택', min_value=1, max_value=df.index[-1]-1, value=1, step=1)
-    take_range[1] = st.number_input('(구간) 끝번호 선택', min_value=2, max_value=df.index[-1], value=df.index[-1], step=1)
-    text_scale = st.slider("자막 크기 설정", 1, 6, step=1)
+    start_value = setting_dict["시작번호"] if not df.index[-1] < setting_dict["시작번호"] else 1
+    end_value = setting_dict["끝번호"] if not df.index[-1] < setting_dict["끝번호"] else df.index[-1]
+    take_range[0] = st.number_input('(구간) 시작번호 선택', min_value=1, max_value=df.index[-1], value=start_value, step=1)
+    take_range[1] = st.number_input('(구간) 끝번호 선택', min_value=1, max_value=df.index[-1], value=end_value, step=1)
+    text_scale = st.slider("자막 크기 설정", 1, 6, step=1, value=setting_dict["자막크기"])
 
 
     lang_list = ["한국어", "영어", "중국어"]
@@ -117,11 +142,19 @@ with st.sidebar:
         if setting_result["자막"]:
             setting_list.append(setting_result)
 
+    selected_language = [l["언어"] for l in setting_list]
 
     st.write("## 자막 순서 설정")
+
     language_order = []
-    for setting_list_item in setting_list:
-        language_order.append(st.selectbox(f"{setting_list.index(setting_list_item) + 1}번째", [l["언어"] for l in setting_list if l["언어"] not in language_order]))
+    if sorted(selected_language) == sorted(setting_dict["자막순서"]):
+        for lan in selected_language:
+            language_order.append(st.selectbox(f"{selected_language.index(lan) + 1}번째",
+                                               [l for l in setting_dict["자막순서"] if l not in language_order]))
+    else:
+        for lan in selected_language:
+            language_order.append(st.selectbox(f"{selected_language.index(lan) + 1}번째",
+                                               [l for l in selected_language if l not in language_order]))
 
     temp = []
     for lan in language_order:
@@ -134,6 +167,21 @@ with st.sidebar:
     start_button_2 = st.sidebar.button("시작", key="button2")
 
 if start_button_1 or start_button_2:
+
+    setting_json_to_save = {
+        "엑셀파일" : selected_file_name,
+        "시작번호" : take_range[0],
+        "끝번호" : take_range[1],
+        "자막크기" : text_scale,
+        "언어설정" : setting_list,
+        "자막순서" : language_order
+    }
+
+    with open("./lang_setting.txt", "w", encoding="UTF-8") as f:
+        f.write(json.dumps(setting_json_to_save, ensure_ascii=False))
+
+    print(setting_json_to_save)
+
     time.sleep(4)
     df = df.iloc[take_range[0]-1:take_range[1], :]
 
@@ -143,9 +191,12 @@ if start_button_1 or start_button_2:
         df = df[[i["언어"] for i in setting_list]]
 
 
+    lang_info = [f"{i['언어']} {i['배속']} 배속" for i in setting_list]
+    lang_info = " / ".join(lang_info)
+
     for i in df.itertuples():
         placeholder_list = [st.empty() for _ in range(len(setting_list) + 1)]
-        placeholder_list[0].write("#" * (7-text_scale) + " " + str(i[0]))
+        placeholder_list[0].write("#" * (7-text_scale) + " " + f"{i[0]}번 ({lang_info})")
         num = 1
         for j in i[1:]:
             placeholder_list[num].write("#" * (7-text_scale) + " " + j)
