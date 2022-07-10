@@ -116,7 +116,7 @@ with st.sidebar:
     start_button = st.sidebar.button("시작")
 
 if start_button:
-    time.sleep(2)
+    time.sleep(4)
     df = df.iloc[take_range[0]-1:take_range[1], :]
 
     if not setting_list:
