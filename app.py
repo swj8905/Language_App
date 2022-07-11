@@ -10,6 +10,22 @@ import base64
 from pydub import AudioSegment
 import streamlit.components.v1 as components
 import TTS_Module
+from streamlit_javascript import st_javascript
+
+
+def client_ip():
+    url = 'https://api.ipify.org?format=json'
+    script = (f'await fetch("{url}").then('
+                'function(response) {'
+                    'return response.json();'
+                '})')
+    try:
+        result = st_javascript(script)
+
+        if isinstance(result, dict) and 'ip' in result:
+            return result['ip']
+    except:
+        return ""
 
 def get_audio_length(file_name):
     audio = AudioSegment.from_file(file_name)
@@ -84,8 +100,20 @@ def save_uploaded_file(uploadedfile):
             st.success("업로드 완료하였습니다. MP3 변환을 시작합니다.".format(uploadedfile.name))
             TTS_Module.make_mp3_files_all_languages(uploadedfile.name.replace(".xlsx", ""))
 
+
+ip_address = client_ip()
 f_setting = open("./lang_setting.txt", "r", encoding="utf-8")
-setting_dict = json.loads(f_setting.read())
+f_setting_dict = json.loads(f_setting.read())
+if ip_address:
+    setting_dict = f_setting_dict[ip_address]
+elif (ip_address == "") or (ip_address not in list(f_setting_dict.keys())):
+    setting_dict = {
+"엑셀파일": "600new.xlsx",
+"시작번호": 1,
+"끝번호": 600,
+"자막크기": 1,
+"언어설정": [{"언어": "한국어", "자막": True, "간격": 0.0, "소리": True, "배속": 1.0, "반복횟수": 1}, {"언어": "영어", "자막": True, "간격": 0.0, "소리": True, "배속": 1.0, "반복횟수": 1}, {"언어": "중국어", "자막": True, "간격": 0.0, "소리": True, "배속": 1.0, "반복횟수": 1}],
+"자막순서": ["한국어", "영어", "중국어"] }
 
 def nfd2nfc(data):
     return normalize("NFC", data)
@@ -168,13 +196,14 @@ with st.sidebar:
 
 if start_button_1 or start_button_2:
 
-    setting_json_to_save = {
+    setting_json_to_save = { ip_address :{
         "엑셀파일" : selected_file_name,
         "시작번호" : take_range[0],
         "끝번호" : take_range[1],
         "자막크기" : text_scale,
         "언어설정" : setting_list,
         "자막순서" : language_order
+    }
     }
 
     with open("./lang_setting.txt", "w", encoding="UTF-8") as f:
