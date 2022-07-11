@@ -126,12 +126,19 @@ with st.sidebar:
     excel_file_list = list(map(nfd2nfc, excel_file_list))
 
     if setting_dict["엑셀파일"] not in excel_file_list:
-        setting_dict["엑셀파일"] = excel_file_list[0]
+        try:
+            setting_dict["엑셀파일"] = excel_file_list[0]
+        except:
+            setting_dict["엑셀파일"] = ""
 
-    selected_file_name = st.radio(
-        "사용할 엑셀 파일",
-        excel_file_list, index=excel_file_list.index(setting_dict["엑셀파일"])
-    )
+    try:
+        selected_file_name = st.radio(
+            "사용할 엑셀 파일",
+            excel_file_list, index=excel_file_list.index(setting_dict["엑셀파일"])
+        )
+    except:
+        selected_file_name = ""
+        st.write("엑셀 파일이 없습니다. 엑셀 파일을 업로드해주세요.")
 
     with st.expander("새로운 엑셀 파일 업로드"):
         datafile = st.file_uploader("엑셀 업로드", type=['xlsx'])
@@ -151,10 +158,12 @@ with st.sidebar:
 
 
 
-    df = pd.read_excel(f"./엑셀파일/{selected_file_name}", header=None).iloc[:, :3]
-    df.columns = ["한국어", "영어", "중국어"]
-    df.index = df.index + 1
-
+    if selected_file_name:
+        df = pd.read_excel(f"./엑셀파일/{selected_file_name}", header=None).iloc[:, :3]
+        df.columns = ["한국어", "영어", "중국어"]
+        df.index = df.index + 1
+    else:
+        df = pd.DataFrame()
     # take_range = st.slider("구간", min_value=1, max_value=df.index[-1], value=(1, df.index[-1]))
     take_range = [0, 0]
     start_value = setting_dict["시작번호"] if not df.index[-1] < setting_dict["시작번호"] else 1
