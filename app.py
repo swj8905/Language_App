@@ -104,7 +104,8 @@ def save_uploaded_file(uploadedfile):
 ip_address = client_ip()
 f_setting = open("./lang_setting.txt", "r", encoding="utf-8")
 f_setting_dict = json.loads(f_setting.read())
-if ip_address:
+f_setting.close()
+if ip_address in list(f_setting_dict.keys()):
     setting_dict = f_setting_dict[ip_address]
 elif (ip_address == "") or (ip_address not in list(f_setting_dict.keys())):
     setting_dict = {
@@ -196,7 +197,7 @@ with st.sidebar:
 
 if start_button_1 or start_button_2:
 
-    setting_json_to_save = { ip_address :{
+    setting_json_to_save = {
         "엑셀파일" : selected_file_name,
         "시작번호" : take_range[0],
         "끝번호" : take_range[1],
@@ -204,12 +205,10 @@ if start_button_1 or start_button_2:
         "언어설정" : setting_list,
         "자막순서" : language_order
     }
-    }
+    f_setting_dict[ip_address] = setting_json_to_save
 
     with open("./lang_setting.txt", "w", encoding="UTF-8") as f:
-        f.write(json.dumps(setting_json_to_save, ensure_ascii=False))
-
-    print(setting_json_to_save)
+        f.write(json.dumps(f_setting_dict, ensure_ascii=False))
 
     time.sleep(4)
     df = df.iloc[take_range[0]-1:take_range[1], :]
