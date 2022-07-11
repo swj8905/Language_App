@@ -86,8 +86,8 @@ def setting_lang(lang):
         interval_time = st.slider("간격 (초)", 0.0, 5.0, step=0.1, key=lang, value=float(get_saved_data["간격"]) if get_saved_data else 0.1)
         sound = st.checkbox("소리", key=lang, value=get_saved_data["소리"] if get_saved_data else False)
         if sound:
-            sound_speed = st.slider("배속", 1.0, 6.0, step=0.1, key=lang, value=float(get_saved_data["배속"]) if get_saved_data else 1.0)
-            sound_repeat_num = st.slider("반복 횟수", 1, 5, step=1, key=lang, value=int(get_saved_data["반복횟수"]) if get_saved_data else 1)
+            sound_speed = st.slider("배속", 1.0, 6.0, step=0.1, key=lang, value=float(get_saved_data["배속"]) if get_saved_data else 0.0)
+            sound_repeat_num = st.slider("반복 횟수", 1, 5, step=1, key=lang, value=int(get_saved_data["반복횟수"]) if get_saved_data else 0)
     result = {"언어":lang, "자막":check, "간격":interval_time, "소리":sound, "배속":sound_speed, "반복횟수":sound_repeat_num}
     return result
 
@@ -206,7 +206,6 @@ if start_button_1 or start_button_2:
         "자막순서" : language_order
     }
     f_setting_dict[ip_address] = setting_json_to_save
-
     with open("./lang_setting.txt", "w", encoding="UTF-8") as f:
         f.write(json.dumps(f_setting_dict, ensure_ascii=False))
 
@@ -228,10 +227,12 @@ if start_button_1 or start_button_2:
         num = 1
         for j in i[1:]:
             placeholder_list[num].write("#" * (7-text_scale) + " " + j)
-            if setting_list[num-1]["배속"] != 0:
+            if setting_list[num-1]["소리"] == True:
                 audio_autoplay(f"./음성파일/{selected_file_name.replace('.xlsx', '')}/{setting_list[num-1]['언어']}/{i[0]}.mp3", play_speed=setting_list[num-1]["배속"], repeat_num=setting_list[num-1]["반복횟수"])
-
+            else:
+                time.sleep(2)
             time.sleep(setting_list[num-1]["간격"])
+
             num += 1
         for k in range(len(setting_list)+1):
             placeholder_list[k].empty()
